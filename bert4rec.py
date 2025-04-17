@@ -10,39 +10,21 @@ class BERT4Rec(nn.Module):
         self.max_seq_length = max_seq_length
         self.hidden_size = hidden_size  # Set to 768 to match BERT's hidden size
 
-        # item embedding
-        self.item_embedding = nn.Embedding(vocab_size, hidden_size, padding_idx=0)
-        # position embedding
-        self.position_embedding = nn.Embedding(max_seq_length, hidden_size)
-
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         
         for param in self.bert.encoder.layer[:2].parameters():
             param.requires_grad = False
 
         self.output_layer = nn.Linear(hidden_size, vocab_size)
-        self.layer_norm = nn.LayerNorm(hidden_size)
-        self.dropout = nn.Dropout(dropout)
 
     def forward(self, input_ids, masked_positions):
         device = input_ids.device
         batch_size, seq_len = input_ids.size()
 
-        position_ids = torch.arange(seq_len, dtype=torch.long, device=device)
-        position_ids = position_ids.unsqueeze(0).expand_as(input_ids)  # [batch, seq]
-        
-        # item embedding
-        item_emb = self.item_embedding(input_ids)
-        # position embedding
-        pos_emb = self.position_embedding(position_ids)
-        embeddings = item_emb + pos_emb
-        embeddings = self.layer_norm(embeddings)
-        embeddings = self.dropout(embeddings)
-
         # attention mask for padding tokens
         attention_mask = input_ids.ne(0).long()  
         token_type_ids = torch.zeros_like(input_ids)
-        outputs = self.bert(inputs_embeds=embeddings, attention_mask=attention_mask, token_type_ids=token_type_ids)
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
         
         # final hidden representation
         sequence_output = outputs.last_hidden_state  
