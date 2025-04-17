@@ -15,9 +15,19 @@ class BERT4RecDataset(Dataset):
     def __getitem__(self, idx):
         user = self.users[idx]
         seq = self.user_train[user]
+        
+        # Debug print: Check the original sequence
+        # print(f"User {user} original sequence:", seq)
+        
         masked_seq, masked_pos, masked_labels = mask_sequence(seq, self.mask_token, max_len=self.max_len)
-        return torch.tensor(masked_seq), torch.tensor(masked_pos), torch.tensor(masked_labels)
 
+        # Debug print: Check the masked sequence, positions, and labels
+        # print(f"User {user} masked sequence:", masked_seq)
+        # print(f"User {user} masked positions:", masked_pos)
+        # print(f"User {user} masked labels:", masked_labels)
+
+        return torch.tensor(masked_seq), torch.tensor(masked_pos), torch.tensor(masked_labels)
+    
 def collate_fn(batch):
     input_ids, masked_pos, masked_labels = zip(*batch)
     max_len = max(pos.size(0) for pos in masked_pos)

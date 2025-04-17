@@ -26,13 +26,13 @@ def data_load(filename):
     for user in User:
         full_seq = User[user]
         if len(full_seq) < 3:
-            continue  # 不足以划分 train/valid/test
+            continue  # not enough data to split into train/valid/test
 
         train_seq = full_seq[:-2]
         valid_seq = full_seq[:-1]
         test_seq = full_seq[1:]
 
-        # pad 训练序列（valid/test 不需要 pad）
+        # pad training sequence (no padding for valid/test)
         if len(train_seq) < max_len:
             train_seq = [0] * (max_len - len(train_seq)) + train_seq
         else:
@@ -56,6 +56,10 @@ def data_load(filename):
 
 # def main():
 #     user_train, user_valid, user_test, usernum, itemnum = data_load('ratings.dat')
-#     print(user_train)
+#     for uid in list(user_train.keys())[:3]:
+#         print(f"User {uid}")
+#         print(f"  Train: {user_train[uid]}")
+#         print(f"  Valid: {user_valid[uid]}")
+#         print(f"  Test : {user_test[uid]}")
 
 # main()
