@@ -24,17 +24,38 @@ def data_load(filename):
 
     max_len = 20
     for user in User:
-        seq = User[user][-max_len:] 
-        if len(seq) < max_len:
-            seq = [0] * (max_len - len(seq)) + seq  
-        user_train[user] = seq[:-2]
-        user_valid[user] = [seq[-2]]
-        user_test[user] = [seq[-1]]
+        full_seq = User[user]
+        if len(full_seq) < 3:
+            continue  # 不足以划分 train/valid/test
+
+        train_seq = full_seq[:-2]
+        valid_seq = full_seq[:-1]
+        test_seq = full_seq[1:]
+
+        # pad 训练序列（valid/test 不需要 pad）
+        if len(train_seq) < max_len:
+            train_seq = [0] * (max_len - len(train_seq)) + train_seq
+        else:
+            train_seq = train_seq[-max_len:]
+
+        if len(valid_seq) < max_len:
+            valid_seq = [0] * (max_len - len(valid_seq)) + valid_seq
+        else:
+            valid_seq = valid_seq[-max_len:]
+
+        if len(test_seq) < max_len:
+            test_seq = [0] * (max_len - len(test_seq)) + test_seq
+        else:
+            test_seq = test_seq[-max_len:]
+
+        user_train[user] = train_seq
+        user_valid[user] = valid_seq
+        user_test[user] = test_seq
     return user_train, user_valid, user_test, usernum, itemnum
 
 
-def main():
-    user_train, user_valid, user_test, usernum, itemnum = data_load('ratings.dat')
-    print(user_train)
+# def main():
+#     user_train, user_valid, user_test, usernum, itemnum = data_load('ratings.dat')
+#     print(user_train)
 
-main()
+# main()

@@ -15,7 +15,7 @@ class BERT4RecDataset(Dataset):
     def __getitem__(self, idx):
         user = self.users[idx]
         seq = self.user_train[user]
-        masked_seq, masked_pos, masked_labels = mask_sequence(seq, self.mask_token)
+        masked_seq, masked_pos, masked_labels = mask_sequence(seq, self.mask_token, max_len=self.max_len)
         return torch.tensor(masked_seq), torch.tensor(masked_pos), torch.tensor(masked_labels)
 
 def collate_fn(batch):
@@ -49,27 +49,32 @@ class EvalDataset(Dataset):
         # Mask the last position
         masked_seq = input_seq[:-1] + [self.mask_token]
         masked_pos = [self.max_len - 1]
-        masked_label = [input_seq[-1]]  # 
+        masked_label = [input_seq[-1]]   
 
         return torch.tensor(masked_seq), torch.tensor(masked_pos), torch.tensor(masked_label)
     
 
-
-def mask_sequence(seq, mask_token=9999, mask_prob=0.15):
+def mask_sequence(seq, mask_token=9999, mask_ratio=0.5, max_len=20):
+    seq = seq[-max_len:]
+    num_to_mask = max(1, int(len(seq) * mask_ratio))
+    mask_indices = random.sample(range(len(seq)), num_to_mask)
 
     masked_seq = []
     masked_pos = []
     masked_labels = []
 
     for idx, item in enumerate(seq):
-        if item == 0:  # except padding 
+        if item == 0:
             masked_seq.append(0)
             continue
-        if random.random() < mask_prob:
-            masked_seq.append(mask_token) # mask
+        if idx in mask_indices:
+            masked_seq.append(mask_token)
             masked_pos.append(idx)
             masked_labels.append(item)
         else:
             masked_seq.append(item)
 
+    pad_len = max_len - len(masked_seq)
+    masked_seq = [0] * pad_len + masked_seq
+    masked_pos = [pos + pad_len for pos in masked_pos]  # shift position
     return masked_seq, masked_pos, masked_labels
