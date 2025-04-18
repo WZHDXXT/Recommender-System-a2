@@ -58,12 +58,14 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
         relevant_items = user_valid[user]
 
         rated = user_train[user] + relevant_items
-        # items = relevant_items + bert4rec_dataset.random_neg_sampling(rated_items=rated, num_samples=num_item_sample)
-        items = relevant_items
+        
+        items = relevant_items + bert4rec_dataset.random_neg_sampling(rated_items=rated, num_samples=num_item_sample)
+        # items = relevant_items
         with torch.no_grad():
             seq = torch.LongTensor([seq]).to(device)
             predictions = -model(seq)
-            predictions = predictions[0][-1]
+            # predicted score at the last position
+            predictions = predictions[0][-1][items]
             top_k_preds = predictions.argsort(descending=True)[:10].tolist()
 
         #  Recall、NDCG, HIT
