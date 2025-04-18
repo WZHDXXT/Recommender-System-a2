@@ -1,10 +1,7 @@
-from model import BERT
+from model import Bert4Rec
 from torch.utils.data import DataLoader
 from maskdataset import BERTRecDataSet
 from data_load import MakeSequenceDataSet
-from IPython.display import clear_output
-from tqdm import tqdm
-import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from evaluation import evaluate
@@ -28,13 +25,29 @@ data_loader = DataLoader(
 
 
 
-model = BERT(
-    max_seq_length=20,
-    vocab_size=3706,      
-    bert_num_blocks=2,
-    bert_num_heads=2,
-    hidden_size=128,
-    bert_dropout=0.1
+# model = BERT(
+#     max_seq_length=20,
+#     vocab_size=3706,      
+#     bert_num_blocks=2,
+#     bert_num_heads=2,
+#     hidden_size=128,
+#     bert_dropout=0.1
+# )
+
+vocab_size = 3706  
+max_seq_length = 20
+bert_num_blocks = 2
+bert_num_heads = 2
+hidden_size = 512
+bert_dropout = 0.1
+
+model = Bert4Rec(
+    max_seq_length=max_seq_length,
+    vocab_size=vocab_size,
+    bert_num_blocks=bert_num_blocks,
+    bert_num_heads=bert_num_heads,
+    hidden_size=hidden_size,
+    bert_dropout=bert_dropout
 )
 
 
@@ -99,3 +112,4 @@ for epoch in range(1, 2 + 1):
         bert4rec_dataset = bert4rec_dataset
     )
     print(ndcg, recall)
+
