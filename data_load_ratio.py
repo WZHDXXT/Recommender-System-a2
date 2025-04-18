@@ -13,7 +13,7 @@ def data_load(filename):
             user_id, movie_id, rating, timestamp = map(int, line.strip().split("::"))
             usernum = max(user_id, usernum)
             itemnum = max(movie_id, itemnum)
-            if rating > 3:
+            if rating > 2:
                 User[user_id].append((timestamp, movie_id))
     
     User = {user: items for user, items in User.items() if len(items) >= 5}

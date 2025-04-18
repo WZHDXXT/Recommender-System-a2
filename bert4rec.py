@@ -3,7 +3,7 @@ import torch.nn as nn
 from transformers import BertModel, BertConfig
 
 class BERT4Rec(nn.Module):
-    def __init__(self, vocab_size, hidden_size=768, max_seq_length=100, num_layers=3, num_heads=4, dropout=0.1):
+    def __init__(self, vocab_size, hidden_size=256, max_seq_length=100, num_layers=3, num_heads=4, dropout=0.1):
         super(BERT4Rec, self).__init__()
 
         self.vocab_size = vocab_size
@@ -27,12 +27,20 @@ class BERT4Rec(nn.Module):
             attention_probs_dropout_prob=dropout,
         )
 
-        # self.bert = BertModel(bert_config)
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
-        for param in self.bert.encoder.layer[:2].parameters():
-             param.requires_grad = False
+        self.bert = BertModel(bert_config)
+        # self.bert = BertModel.from_pretrained('bert-base-uncased')
+        # for param in self.bert.encoder.layer[:2].parameters():
+        #      param.requires_grad = False
         
         self.output_layer = nn.Linear(hidden_size, vocab_size)
+        
+        # weight initialization
+        nn.init.xavier_uniform_(self.item_embedding.weight)
+        nn.init.xavier_uniform_(self.position_embedding.weight)
+        nn.init.xavier_uniform_(self.output_layer.weight)
+        if self.output_layer.bias is not None:
+            nn.init.zeros_(self.output_layer.bias)
+
         self.layer_norm = nn.LayerNorm(hidden_size)
         self.dropout = nn.Dropout(dropout)
 
@@ -53,11 +61,10 @@ class BERT4Rec(nn.Module):
 
         # attention mask for padding tokens
         attention_mask = input_ids.ne(0).long()  
-        # outputs = self.bert(inputs_embeds=embeddings, attention_mask=attention_mask)
-        token_type_ids = torch.zeros_like(input_ids)
-        outputs = self.bert(inputs_embeds=embeddings, attention_mask=attention_mask, token_type_ids=token_type_ids)
+        outputs = self.bert(inputs_embeds=embeddings, attention_mask=attention_mask)
+        # token_type_ids = torch.zeros_like(input_ids)
+        # outputs = self.bert(inputs_embeds=embeddings, attention_mask=attention_mask, token_type_ids=token_type_ids)
          
-         # final hidden representation
         # final hidden representation
         sequence_output = outputs.last_hidden_state  
         
@@ -66,7 +73,6 @@ class BERT4Rec(nn.Module):
 
         # prediction over vocab
         logits = self.output_layer(masked_output)  # [batch, num_masked, vocab_size]
-
         return logits
 
     def _gather_positions(self, sequence_output, positions):

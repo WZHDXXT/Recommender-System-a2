@@ -13,7 +13,7 @@ def data_load(filename):
             user_id, movie_id, rating, timestamp = map(int, line.strip().split("::"))
             usernum = max(user_id, usernum)
             itemnum = max(movie_id, itemnum)
-            if rating > 3:
+            if rating > 3: # threshold
                 User[user_id].append((timestamp, movie_id))
 
     User = {user: items for user, items in User.items() if len(items) >= 5}
@@ -25,7 +25,7 @@ def data_load(filename):
     max_len = 20
     for user in User:
         full_seq = User[user]
-        if len(full_seq) < 3:
+        if len(full_seq) < 5:
             continue  # not enough data to split into train/valid/test
 
         train_seq = full_seq[:-2]
