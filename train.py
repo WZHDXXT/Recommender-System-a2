@@ -1,4 +1,4 @@
-from model2 import BERT
+from model1 import Bert4Rec
 from torch.utils.data import DataLoader
 from maskdataset import BERTRecDataSet
 from data_load import MakeSequenceDataSet
@@ -42,7 +42,7 @@ bert_num_heads = 2
 hidden_size = 512
 bert_dropout = 0.1
 
-model = BERT(
+model = Bert4Rec(
     max_seq_length=max_seq_length,
     vocab_size=vocab_size,
     bert_num_blocks=bert_num_blocks,
@@ -50,6 +50,7 @@ model = BERT(
     hidden_size=hidden_size,
     bert_dropout=bert_dropout
 )
+model.to(device)
 
 
 def train(model, criterion, optimizer, data_loader):
