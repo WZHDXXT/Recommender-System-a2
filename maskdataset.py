@@ -1,6 +1,5 @@
 from torch.utils.data import Dataset
 import torch
-import numpy as np
 import random
 from data_load import MakeSequenceDataSet
 
@@ -19,20 +18,15 @@ class BERTRecDataSet(Dataset):
         user_seq = self.user_train[user]
         tokens = []
         labels = []
-
+        # truncation
         rated_items = user_seq[-self.max_len:]  
 
-        for s in rated_items:
-            prob = np.random.random()
-            if prob < self.mask_prob:
-                prob /= self.mask_prob
-                if prob < 0.8:
-                    tokens.append(self.num_item + 1)  # mask token
-                elif prob < 0.9:
-                    rnd_token = self.random_neg_sampling(rated_items, 1)[0]  # negative
-                    tokens.append(rnd_token)
-                else:
-                    tokens.append(s) 
+        num_items_to_mask = int(self.mask_prob * len(rated_items))  # mask number
+        masked_indices = random.sample(range(len(rated_items)), num_items_to_mask)  # random mask
+
+        for idx, s in enumerate(rated_items):
+            if idx in masked_indices:  
+                tokens.append(self.num_item + 1)  # mask token
             else:
                 tokens.append(s) 
             labels.append(s)

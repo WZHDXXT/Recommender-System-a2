@@ -64,8 +64,9 @@ class MakeSequenceDataSet():
         group_df = self.df.groupby('user_idx')
         for user, group in group_df:
             seq = group['item_idx'].tolist()
-            if len(seq) < 5:
-                continue  # skip users with too short history
+            if len(seq) < 5:  # Ensure there's enough history
+                continue
+            seq = seq[-20:]  # Limit sequence to the last 20 items
             np.random.shuffle(seq)
 
             # Split data into 70% for training, 15% for validation, 15% for testing

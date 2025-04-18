@@ -1,4 +1,4 @@
-from model import Bert4Rec
+from model2 import BERT
 from torch.utils.data import DataLoader
 from maskdataset import BERTRecDataSet
 from data_load import MakeSequenceDataSet
@@ -9,6 +9,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 max_len = 20
 mask_prob = 0.15
+
 dataset = MakeSequenceDataSet(data_path='./')
 num_user = dataset.num_user
 num_item = dataset.num_item
@@ -34,14 +35,14 @@ data_loader = DataLoader(
 #     bert_dropout=0.1
 # )
 
-vocab_size = 3706  
+vocab_size = num_item  
 max_seq_length = 20
 bert_num_blocks = 2
 bert_num_heads = 2
 hidden_size = 512
 bert_dropout = 0.1
 
-model = Bert4Rec(
+model = BERT(
     max_seq_length=max_seq_length,
     vocab_size=vocab_size,
     bert_num_blocks=bert_num_blocks,
@@ -53,7 +54,7 @@ model = Bert4Rec(
 
 def train(model, criterion, optimizer, data_loader):
     metrics = {
-    'train_loss': []
+    'train_loss': [],
 }
     model.train()
     loss_val = 0
@@ -91,8 +92,11 @@ criterion = nn.CrossEntropyLoss(ignore_index=0)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 loss_list = []
 ndcg_list = []
-hit_list = []
-for epoch in range(1, 2 + 1):
+best_ndcg = 0
+counter = 0
+epoch_num = 50
+patience = 20
+for epoch in range(1, epoch_num+1):
     train_loss = train(
         model = model, 
         criterion = criterion, 
@@ -101,15 +105,26 @@ for epoch in range(1, 2 + 1):
     loss_list.append(train_loss)
 
     print(f'Epoch: {epoch:3d}| Train loss: {train_loss:.5f}')
-# plt.plot(loss_list)
 
-    ndcg, hit, recall = evaluate(
+    ndcg, recall = evaluate(
         model = model, 
         user_train = user_train,
         user_valid = user_valid, 
-        max_len = 20,
+        max_len = max_len,
         make_sequence_dataset = dataset,
-        bert4rec_dataset = bert4rec_dataset
+        bert4rec_dataset = bert4rec_dataset,
+        K = 10
     )
     print(ndcg, recall)
+    ndcg_list.append(ndcg)
+    if ndcg > best_ndcg:
+        counter = 0
+        best_ndcg = ndcg
+    else:
+        counter += 1
+        print(f"Early Stopping Counter: {counter}/{patience}")
+        if counter >= patience:
+            print("Early stopping!")
+            break
+
 
