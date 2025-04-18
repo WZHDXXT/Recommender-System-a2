@@ -51,13 +51,13 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
     users = [user for user in range(make_sequence_dataset.num_user)] 
 
     for user in users:
-        seq = user_train[user][-max_len:] 
+        seq = user_valid[user][:-1][-max_len:] 
         padding_len = max_len - len(seq)
         seq = [0] * padding_len + seq
 
-        relevant_items = user_valid[user]
+        relevant_items = [user_valid[user][-1]]
 
-        rated = user_train[user] + relevant_items
+        rated = user_train[user] + user_valid[user]
         
         items = relevant_items + bert4rec_dataset.random_neg_sampling(rated_items=rated, num_samples=num_item_sample)
         # items = relevant_items
@@ -66,7 +66,8 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
             predictions = -model(seq)
             # predicted score at the last position
             predictions = predictions[0][-1][items]
-            top_k_preds = predictions.argsort(descending=True)[:10].tolist()
+            top_k_indices = predictions.argsort(descending=True)[:10].tolist()
+            top_k_preds = [items[i] for i in top_k_indices]
 
         #  Recall、NDCG, HIT
         hit_count = len(set(relevant_items) & set(top_k_preds))  
