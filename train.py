@@ -1,4 +1,4 @@
-from model2 import Bert4Rec
+from model import Bert4Rec
 from torch.utils.data import DataLoader
 from maskdataset import BERTRecDataSet
 from data_load import MakeSequenceDataSet
