@@ -1,77 +1,20 @@
-import numpy as np
-from tqdm import tqdm
 import torch
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# Recall@K
+def recall_at_k(recommended_items, relevant_items, k=10):
+    recommended_items = recommended_items[:k]  
+    relevant_items = set(relevant_items)  
+    intersection = [item for item in recommended_items if item in relevant_items]
+    return len(intersection) / k
 
-def evaluate_(model, user_train, user_valid, max_len, make_sequence_dataset, bert4rec_dataset):
-    model.eval()
+def ndcg_at_k(recommended_items, relevant_items, k=10):
+    recommended_items = recommended_items[:k]
+    relevant_items = set(relevant_items)
 
-    NDCG = 0.0
-    HIT = 0.0
-    RECALL = 0.0
+    dcg = 0.0
+    for i, item in enumerate(recommended_items):
+        if item in relevant_items:
+            dcg += 1 / torch.log2(torch.tensor(i + 2.0))  
 
-    num_item_sample = 100
-    users = [user for user in range(make_sequence_dataset.num_user)]
-
-    for user in users:
-        # seq = (user_train[user] + [make_sequence_dataset.num_item + 1])[-max_len:]
-        seq = user_valid[user][-max_len:]
-        padding_len = max_len - len(seq)
-        seq = [0] * padding_len + seq
-
-        # rated = user_train[user] + [user_valid[user]]
-        rated = user_valid[user]
-        items = [user_valid[user][-1]] + bert4rec_dataset.random_neg_sampling(rated_items=rated, num_samples=num_item_sample)
-
-        with torch.no_grad():
-            seq = torch.LongTensor([seq]).to(device)
-            predictions = -model(seq)
-            predictions = predictions[0][-1][items]
-            rank = predictions.argsort().argsort()[0].item()
-            
-
-        if rank < 10:
-            NDCG += 1 / np.log2(rank + 2)
-            HIT += 1
-            RECALL += 1 / 1  # only 1 relevant item → recall = 1 if hit
-
-    total = len(users)
-    return NDCG / total, HIT / total, RECALL / total
-
-
-def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert4rec_dataset):
-    model.eval()
-
-    NDCG = 0.0
-    HIT = 0.0
-    RECALL = 0.0
-
-    num_item_sample = 100
-    users = [user for user in range(make_sequence_dataset.num_user)] 
-
-    for user in users:
-        seq = user_train[user][-max_len:] 
-        padding_len = max_len - len(seq)
-        seq = [0] * padding_len + seq
-
-        relevant_items = user_valid[user]
-
-        rated = user_train[user] + relevant_items
-        # items = relevant_items + bert4rec_dataset.random_neg_sampling(rated_items=rated, num_samples=num_item_sample)
-        items = relevant_items
-        with torch.no_grad():
-            seq = torch.LongTensor([seq]).to(device)
-            predictions = -model(seq)
-            predictions = predictions[0][-1]
-            top_k_preds = predictions.argsort(descending=True)[:10].tolist()
-
-        #  Recall、NDCG, HIT
-        hit_count = len(set(relevant_items) & set(top_k_preds))  
-        if hit_count > 0:
-            HIT += 1 
-            RECALL += hit_count / len(relevant_items) 
-            NDCG += sum([1 / np.log2(i + 2) for i, item in enumerate(top_k_preds) if item in relevant_items]) 
-
-    total = len(users)
-    return NDCG / total, HIT / total, RECALL / total
+    idcg = sum(1 / torch.log2(torch.tensor(i + 2.0)) for i in range(min(k, len(relevant_items))))
+    return dcg / idcg if idcg > 0 else 0.0
