@@ -72,11 +72,10 @@ for epoch in range(epochs):
             
             for batch_idx in range(len(input_ids)):
                 recommended_items = top_k_preds[batch_idx].view(-1).cpu().numpy()  # top-10
-                # relevant_items = input_ids[batch_idx].clone().cpu().numpy()
-                # relevant_items[masked_pos[batch_idx].cpu().numpy()] = masked_labels[batch_idx].cpu().numpy()
-                # relevant_items = [item for item in relevant_items if item != 0 and item != mask_token]
-                # relevant_items = [item for item in masked_labels[batch_idx].tolist() if item != 0 and item != mask_token]                
-                relevant_items = [masked_labels[batch_idx].item()]
+                relevant_items = input_ids[batch_idx].clone().cpu().numpy()
+                relevant_items[masked_pos[batch_idx].cpu().numpy()] = masked_labels[batch_idx].cpu().numpy()
+                relevant_items = [item for item in relevant_items if item != 0 and item != mask_token]
+                # relevant_items = [masked_labels[batch_idx].item()]
                 print(f"Recommended items (top-10): {recommended_items}")
                 print(f"Relevant items (before filtering): {relevant_items}")
                 
@@ -122,10 +121,10 @@ for input_ids, masked_pos, masked_labels in eval_loader:
     for batch_idx in range(len(input_ids)):
         recommended_items = top_k_preds[batch_idx].view(-1).cpu().numpy()  # top-10
         
-        # relevant_items = input_ids[batch_idx].clone().cpu().numpy()
-        # relevant_items[masked_pos[batch_idx].cpu().numpy()] = masked_labels[batch_idx].cpu().numpy()
-        # relevant_items = [item for item in relevant_items if item != 0 and item != mask_token]
-        relevant_items = [masked_labels[batch_idx].item()]
+        relevant_items = input_ids[batch_idx].clone().cpu().numpy()
+        relevant_items[masked_pos[batch_idx].cpu().numpy()] = masked_labels[batch_idx].cpu().numpy()
+        relevant_items = [item for item in relevant_items if item != 0 and item != mask_token]
+        # relevant_items = [masked_labels[batch_idx].item()]
         
         # Recall@10
         recall_sum += recall_at_k(recommended_items, relevant_items, k=10)        
