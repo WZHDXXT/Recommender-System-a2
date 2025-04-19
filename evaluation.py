@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import math
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def evaluate_(model, user_train, user_valid, max_len, make_sequence_dataset, bert4rec_dataset):
