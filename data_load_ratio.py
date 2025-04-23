@@ -1,60 +1,95 @@
+import pandas as pd
+import os
 from collections import defaultdict
+import numpy as np
 
-def data_load(filename):
-    usernum = 0
-    itemnum = 0
-    User = defaultdict(list)
-    user_train = {}
-    user_valid = {}
-    user_test = {}
-    # assume user/item index starting from 1
-    with open(filename, 'r', encoding="utf-8") as file:
-        for line in file:
-            user_id, movie_id, rating, timestamp = map(int, line.strip().split("::"))
-            usernum = max(user_id, usernum)
-            itemnum = max(movie_id, itemnum)
-            if rating > 2:
-                User[user_id].append((timestamp, movie_id))
+class MakeSequenceDataSet():
+    """
+    SequenceDataSet for MovieLens 1M
+
+    Converts the original ratings.dat (user::movie::rating::timestamp)
+    into a format suitable for sequence-based recommendation (e.g., BERT4Rec),
+    generating per-user sequences split into train and validation sets.
+    """
+
+    def __init__(self, data_path):
+        print('Reading ratings.dat...')
+        self.df = pd.read_csv(
+            os.path.join(data_path, 'ratings.dat'),
+            sep='::',
+            engine='python',
+            names=['userId', 'movieId', 'rating', 'timestamp']
+        )
+
+        print('Generating ID encoders...')
+        self.item_encoder, self.item_decoder = self.generate_encoder_decoder(self.df['movieId'])
+        self.user_encoder, self.user_decoder = self.generate_encoder_decoder(self.df['userId'])
+        self.num_item, self.num_user = len(self.item_encoder), len(self.user_encoder)
+
+        # Encode movieId and userId to indices
+        self.df['item_idx'] = self.df['movieId'].apply(lambda x: self.item_encoder[x] + 1)  # +1 for padding=0
+        self.df['user_idx'] = self.df['userId'].apply(lambda x: self.user_encoder[x])
+
+        # Sort interactions by user and timestamp
+        self.df = self.df.sort_values(['user_idx', 'timestamp'])
+
+        print('Generating sequence data...')
+        self.user_train, self.user_valid, self.user_test = self.generate_sequence_data()
+
+        print('Finish')
+
+    def generate_encoder_decoder(self, col):
+        """Generate mapping from original IDs to indices and vice versa."""
+        encoder = {}
+        decoder = {}
+        ids = col.unique()
+
+        for idx, _id in enumerate(ids):
+            encoder[_id] = idx
+            decoder[idx] = _id
+
+        return encoder, decoder
+
+    def generate_sequence_data(self):
+        """
+        Convert raw interactions into user-wise sequences.
+        Each user: use all but last item for training, last for validation.
+        """
+        users = defaultdict(list)
+        user_train = {}
+        user_valid = {}
+        user_test = {}
+
+        # Group by user and build sequences
+        group_df = self.df.groupby('user_idx')
+        for user, group in group_df:
+            seq = group['item_idx'].tolist()
+            if len(seq) < 5:  # Ensure there's enough history
+                continue
+            seq = seq[-20:]  # Limit sequence to the last 20 items
+            np.random.shuffle(seq)
+
+            # Split data into 70% for training, 15% for validation, 15% for testing
+            train_size = int(len(seq) * 0.7)
+            valid_size = int(len(seq) * 0.15)
+
+            user_train[user] = seq[:train_size]
+            user_valid[user] = seq[train_size:train_size + valid_size]
+            user_test[user] = seq[train_size + valid_size:]
+
+        return user_train, user_valid, user_test
+
+    def get_train_valid_data(self):
+        """Return the processed train and valid dictionaries."""
+        return self.user_train, self.user_valid, self.user_test
     
-    User = {user: items for user, items in User.items() if len(items) >= 5}
-    # sort by timestamp
-    for user in User:
-        User[user].sort()
-        User[user] = [movie_id for _, movie_id in User[user]]
 
-    max_len = 20
-    for user in User:
-        full_seq = User[user]
-        split_1 = int(len(full_seq) * 0.7)
-        split_2 = int(len(full_seq) * 0.85)
-        train_seq = full_seq[:split_1]
-        valid_seq = full_seq[split_1:split_2]
-        test_seq = full_seq[split_2:]
-
-        if len(train_seq) < max_len:
-            train_seq = [0] * (max_len - len(train_seq)) + train_seq
-        else:
-            train_seq = train_seq[-max_len:]
-
-        if len(valid_seq) < max_len:
-            valid_seq = [0] * (max_len - len(valid_seq)) + valid_seq
-        else:
-            valid_seq = valid_seq[-max_len:]
-
-        if len(test_seq) < max_len:
-            test_seq = [0] * (max_len - len(test_seq)) + test_seq
-        else:
-            test_seq = test_seq[-max_len:]
-
-        user_train[user] = train_seq
-        user_valid[user] = valid_seq
-        user_test[user] = test_seq
-    return user_train, user_valid, user_test, usernum, itemnum
-
-
-def main():
-    user_train, user_valid, user_test, usernum, itemnum = data_load('ratings.dat')
-    # print(user_test)
-
-
-main()
+# def main():
+#     dataset = MakeSequenceDataSet(data_path='./')
+#     user_train, user_valid, user_test = dataset.get_train_valid_data()
+#     num_user = dataset.num_user
+#     num_item = dataset.num_item
+#     print("User 0 train sequence:", user_train[0])
+#     print("User 0 validation item:", user_valid[0])
+#     print("User 0 test item:", user_test[0])
+# main()
