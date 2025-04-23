@@ -139,6 +139,7 @@ ndcg_test, recall_test = evaluate_test(
     model=model,
     user_train=user_train,
     user_valid=user_valid,
+    user_test=user_test,
     max_len = max_len,
     make_sequence_dataset = dataset,
     bert4rec_dataset = bert4rec_dataset,
