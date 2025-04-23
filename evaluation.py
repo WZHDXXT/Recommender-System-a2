@@ -78,3 +78,45 @@ def full_ranking_evaluate_with_validation(model, user_train, user_valid, user_te
         user_count += 1
 
     return ndcg_sum / user_count, recall_sum / user_count
+
+def evaluate_test(model, user_train, user_valid, user_test, max_len, make_sequence_dataset, bert4rec_dataset, K):
+    model.eval()
+
+    NDCG = 0.0
+    RECALL = 0.0
+
+    num_item_sample = 100
+    users = [user for user in range(make_sequence_dataset.num_user)] 
+
+    for user in users:
+        ndcg_u = 0.0
+        recall_u = 0.0
+        count = 0
+
+        seq_prefix = user_train[user] + user_valid[user]
+        for target_item in user_test[user]:
+            seq_input = (seq_prefix + [make_sequence_dataset.num_item + 1])[-max_len:]
+            padding_len = max_len - len(seq_input)
+            seq_input = [0] * padding_len + seq_input
+
+            rated = user_train[user] + user_valid[user] + user_test[user]
+            items = [target_item] + bert4rec_dataset.random_neg_sampling(rated_items=rated, num_samples=num_item_sample)
+
+            with torch.no_grad():
+                seq_tensor = torch.LongTensor([seq_input]).to(device)
+                predictions = -model(seq_tensor)
+                predictions = predictions[0][-1][items]
+                rank = predictions.argsort().argsort()[0].item()
+
+            if rank < K:
+                ndcg_u += 1 / np.log2(rank + 2)
+                recall_u += 1
+
+            seq_prefix.append(target_item)
+            count += 1
+
+        NDCG += ndcg_u / count if count > 0 else 0
+        RECALL += recall_u / count if count > 0 else 0
+
+    total = len(users)
+    return NDCG / total, RECALL / total
