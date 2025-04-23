@@ -4,7 +4,7 @@ from maskdataset import BERTRecDataSet
 from data_load_ratio import MakeSequenceDataSet
 import torch
 import torch.nn as nn
-from evaluation import evaluate
+from evaluation import evaluate, full_ranking_evaluate_with_validation
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 max_len = 20
@@ -74,15 +74,6 @@ def train(model, criterion, optimizer, data_loader):
 
         loss.backward()
         optimizer.step()
-
-        # if i % 100 == 0:
-        #     clear_output(True)
-        #     plt.figure(figsize=(5, 4))
-        #     for j, (name, history) in enumerate(sorted(metrics.items())):
-        #         plt.title(name)
-        #         plt.plot(*zip(*history))
-        #         plt.grid()
-        #     plt.show()
         i += 1
 
     loss_val /= len(data_loader)
@@ -129,3 +120,15 @@ for epoch in range(1, epoch_num+1):
             break
 
 
+ndcg_test, recall_test = full_ranking_evaluate_with_validation(
+    model=model,
+    user_train=user_train,
+    user_valid=user_valid,
+    user_test=user_test,
+    max_len=max_len,
+    vocab_size=vocab_size,
+    device=device,
+    K=10
+)
+print(f"Final Test Recall@10: {recall_test:.4f}")
+print(f"Final Test NDCG@10: {ndcg_test:.4f}")
