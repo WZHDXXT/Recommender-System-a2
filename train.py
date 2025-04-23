@@ -7,6 +7,7 @@ import torch.nn as nn
 from evaluation import evaluate, full_ranking_evaluate_with_validation
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# hyperparameter
 max_len = 20
 mask_prob = 0.15
 
@@ -37,9 +38,12 @@ data_loader = DataLoader(
 
 vocab_size = num_item  
 max_seq_length = 20
+
+# hyperparameter
 bert_num_blocks = 2
 bert_num_heads = 2
 hidden_size = 512
+
 bert_dropout = 0.1
 
 model = Bert4Rec(
@@ -86,8 +90,8 @@ loss_list = []
 ndcg_list = []
 best_ndcg = 0
 counter = 0
-epoch_num = 50
-patience = 20
+epoch_num = 10
+patience = 5
 for epoch in range(1, epoch_num+1):
     train_loss = train(
         model = model, 
