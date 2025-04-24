@@ -36,7 +36,7 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
                 ndcg_u += 1 / np.log2(rank + 2)
                 recall_u += 1
 
-            # seq_prefix.append(target_item)
+            seq_prefix.append(target_item)
             count += 1
 
         NDCG += ndcg_u / count if count > 0 else 0
@@ -73,7 +73,7 @@ def full_ranking_evaluate_with_validation(model, user_train, user_valid, user_te
                 rank = topk.index(target_item)
                 ndcg_sum += 1 / torch.log2(torch.tensor(rank + 2.0)).item()
 
-            # seq.append(target_item)
+            seq.append(target_item)
 
         user_count += 1
 
@@ -112,7 +112,7 @@ def evaluate_test(model, user_train, user_valid, user_test, max_len, make_sequen
                 ndcg_u += 1 / np.log2(rank + 2)
                 recall_u += 1
 
-            # seq_prefix.append(target_item)
+            seq_prefix.append(target_item)
             count += 1
 
         NDCG += ndcg_u / count if count > 0 else 0
