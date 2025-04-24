@@ -1,7 +1,7 @@
 from model1 import Bert4Rec
 from torch.utils.data import DataLoader
 from maskdataset import BERTRecDataSet
-from data_load_ratio import MakeSequenceDataSet
+from data_load import MakeSequenceDataSet
 import torch
 import torch.nn as nn
 from evaluation import evaluate, evaluate_test, full_ranking_evaluate_with_validation
