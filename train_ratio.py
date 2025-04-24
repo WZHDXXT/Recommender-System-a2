@@ -4,11 +4,11 @@ from maskdataset import BERTRecDataSet
 from data_load_ratio import MakeSequenceDataSet
 import torch
 import torch.nn as nn
-from evaluation import evaluate, evaluate_test, full_ranking_evaluate_with_validation
+from evaluation_ratio import evaluate, evaluate_test, full_ranking_evaluate_with_validation
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # hyperparameter
-max_len = 20
+max_len = 30
 mask_prob = 0.15
 
 dataset = MakeSequenceDataSet(data_path='./')
