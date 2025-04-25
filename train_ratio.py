@@ -127,26 +127,26 @@ for epoch in range(1, epoch_num+1):
             break
 
 
-# ndcg_test, recall_test = full_ranking_evaluate_with_validation(
-#     model=model,
-#     user_train=user_train,
-#     user_valid=user_valid,
-#     user_test=user_test,
-#     max_len=max_len,
-#     vocab_size=vocab_size,
-#     device=device,
-#     K=10
-# )
-
 ndcg_test, recall_test = full_ranking_evaluate_with_validation(
     model=model,
     user_train=user_train,
     user_valid=user_valid,
     user_test=user_test,
-    max_len = max_len,
-    make_sequence_dataset = dataset,
-    bert4rec_dataset = bert4rec_dataset,
-    K = 10
+    max_len=max_len,
+    vocab_size=vocab_size,
+    device=device,
+    K=10
 )
+
+# ndcg_test, recall_test = evaluate_test(
+#     model=model,
+#     user_train=user_train,
+#     user_valid=user_valid,
+#     user_test=user_test,
+#     max_len = max_len,
+#     make_sequence_dataset = dataset,
+#     bert4rec_dataset = bert4rec_dataset,
+#     K = 10
+# )
 print(f"Final Test Recall@10: {recall_test:.4f}")
 print(f"Final Test NDCG@10: {ndcg_test:.4f}")
