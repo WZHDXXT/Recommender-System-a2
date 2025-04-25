@@ -83,7 +83,7 @@ def train(model, criterion, optimizer, data_loader):
     loss_val /= len(data_loader)
     return loss_val
 
-
+# ignore padding
 criterion = nn.CrossEntropyLoss(ignore_index=0) 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 loss_list = []
@@ -113,6 +113,8 @@ for epoch in range(1, epoch_num+1):
     )
     print(ndcg, recall)
     ndcg_list.append(ndcg)
+
+    # early stopping with ndcg
     if ndcg > best_ndcg:
         counter = 0
         best_ndcg = ndcg

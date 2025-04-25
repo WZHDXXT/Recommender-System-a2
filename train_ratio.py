@@ -8,7 +8,7 @@ from evaluation_ratio import evaluate, evaluate_test, full_ranking_evaluate_with
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # hyperparameter
-max_len = 30
+max_len = 20
 mask_prob = 0.15
 
 dataset = MakeSequenceDataSet(data_path='./')
@@ -92,6 +92,9 @@ best_ndcg = 0
 counter = 0
 epoch_num = 20
 patience = 10
+for i in range(len(user_valid)):
+    print(user_valid[i])
+
 for epoch in range(1, epoch_num+1):
     train_loss = train(
         model = model, 
