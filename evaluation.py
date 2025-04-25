@@ -28,9 +28,8 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
 
             with torch.no_grad():
                 seq_tensor = torch.LongTensor([seq_input]).to(device)
-                predictions = -model(seq_tensor)
-                predictions = predictions[0][-1][items]
-                rank = predictions.argsort().argsort()[0].item()
+                top_scores = model(seq_tensor)[0, -1][items]
+                rank = (top_scores).argsort(descending=True).tolist().index(0)
 
             if rank < K:
                 ndcg_u += 1 / np.log2(rank + 2)
@@ -104,9 +103,8 @@ def evaluate_test(model, user_train, user_valid, user_test, max_len, make_sequen
 
             with torch.no_grad():
                 seq_tensor = torch.LongTensor([seq_input]).to(device)
-                predictions = -model(seq_tensor)
-                predictions = predictions[0][-1][items]
-                rank = predictions.argsort().argsort()[0].item()
+                top_scores = model(seq_tensor)[0, -1][items]
+                rank = (top_scores).argsort(descending=True).tolist().index(0)
 
             if rank < K:
                 ndcg_u += 1 / np.log2(rank + 2)
