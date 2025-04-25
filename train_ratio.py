@@ -138,7 +138,7 @@ for epoch in range(1, epoch_num+1):
 #     K=10
 # )
 
-ndcg_test, recall_test = evaluate_test(
+ndcg_test, recall_test = full_ranking_evaluate_with_validation(
     model=model,
     user_train=user_train,
     user_valid=user_valid,
