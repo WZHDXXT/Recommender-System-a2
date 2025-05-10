@@ -2,6 +2,7 @@ from transformers import BertPreTrainedModel, BertModel, BertConfig
 import torch.nn as nn
 import torch
 
+# model from HuggingFace
 class Bert4RecConfig(BertConfig):
     def __init__(self, max_seq_length=20, vocab_size=3706, 
                  bert_num_blocks=2, bert_num_heads=2, 

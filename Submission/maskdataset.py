@@ -1,8 +1,8 @@
 from torch.utils.data import Dataset
 import torch
 import random
-# from data_load import MakeSequenceDataSet
 
+# data processing of training set
 class BERTRecDataSet(Dataset):
     def __init__(self, user_train, max_len, num_user, num_item, mask_prob):
         self.user_train = user_train
@@ -12,9 +12,10 @@ class BERTRecDataSet(Dataset):
         self.mask_prob = mask_prob
 
     def __len__(self):
-        return self.num_user
+        return len(self.user_train)
 
-    def __getitem__(self, user): 
+    def __getitem__(self, index): 
+        user = list(self.user_train.keys())[index]
         user_seq = self.user_train[user]
         tokens = []
         labels = []

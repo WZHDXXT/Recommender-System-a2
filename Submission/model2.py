@@ -3,16 +3,17 @@ import torch.nn as nn
 import math
 import torch.nn.functional as F
 
+# model built up from scratch
+
 class PositionalEmbedding(nn.Module):
     def __init__(self, max_len, d_model):
         super().__init__()
-
-        # Compute the positional encodings once in log space.
         self.pe = nn.Embedding(max_len, d_model)
 
     def forward(self, x):
         batch_size = x.size(0)
         return self.pe.weight.unsqueeze(0).repeat(batch_size, 1, 1)
+
 
 class TokenEmbedding(nn.Embedding):
     def __init__(self, vocab_size, embed_size=512):
@@ -21,15 +22,9 @@ class TokenEmbedding(nn.Embedding):
 
 class BERTEmbedding(nn.Module):
     def __init__(self, vocab_size, embed_size, max_len, dropout=0.1):
-        """
-        :param vocab_size: total vocab size
-        :param embed_size: embedding size of token embedding
-        :param dropout: dropout rate
-        """
         super().__init__()
         self.token = TokenEmbedding(vocab_size=vocab_size, embed_size=embed_size)
         self.position = PositionalEmbedding(max_len=max_len, d_model=embed_size)
-        # self.segment = SegmentEmbedding(embed_size=self.token.embedding_dim)
         self.dropout = nn.Dropout(p=dropout)
         self.embed_size = embed_size
 
@@ -52,29 +47,20 @@ class Attention(nn.Module):
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h, d_model, dropout=0.1):
         super().__init__()
-        assert d_model % h == 0
 
-        # We assume d_v always equals d_k
         self.d_k = d_model // h
         self.h = h
-
         self.linear_layers = nn.ModuleList([nn.Linear(d_model, d_model) for _ in range(3)])
         self.output_linear = nn.Linear(d_model, d_model)
         self.attention = Attention()
-
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, query, key, value, mask=None):
         batch_size = query.size(0)
 
-        # 1) Do all the linear projections in batch from d_model => h x d_k
         query, key, value = [l(x).view(batch_size, -1, self.h, self.d_k).transpose(1, 2)
                              for l, x in zip(self.linear_layers, (query, key, value))]
-
-        # 2) Apply attention on all the projected vectors in batch.
         x, attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
-
-        # 3) "Concat" using a view and apply a final linear.
         x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.h * self.d_k)
 
         return self.output_linear(x)
@@ -113,7 +99,6 @@ class SublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        "Apply residual connection to any sublayer with the same size."
         return x + self.dropout(sublayer(self.norm(x)))
     
 class TransformerBlock(nn.Module):
@@ -138,7 +123,7 @@ class BERT(nn.Module):
         max_len = max_seq_length
         n_layers = bert_num_blocks
         heads = bert_num_heads
-        self.vocab_size = vocab_size + 2  # +1 for padding, +1 for mask
+        self.vocab_size = vocab_size + 2
         hidden = hidden_size
         self.hidden = hidden
         dropout = bert_dropout
@@ -150,28 +135,16 @@ class BERT(nn.Module):
             max_len=max_len,
             dropout=dropout
         )
-
-        # multi-layer transformer blocks
         self.transformer_blocks = nn.ModuleList(
             [TransformerBlock(hidden, heads, hidden * 4, dropout) for _ in range(n_layers)]
         )
-
-        self.out = nn.Linear(hidden, vocab_size + 1)  # output: logits for all items
+        self.out = nn.Linear(hidden, vocab_size + 1)
 
     def forward(self, x):
-        """
-        x: [batch_size, seq_len]  — token indices
-        """
-        # attention mask: 1 for real tokens, 0 for padding
-        mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)  # [B, 1, T, T]
-
-        # input embedding
-        x = self.embedding(x)  # [B, T, H]
-
-        # pass through transformer blocks
+        mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)  
+        x = self.embedding(x)  
         for transformer in self.transformer_blocks:
             x = transformer(x, mask)
 
-        # output layer
-        x = self.out(x)  # [B, T, vocab_size]
+        x = self.out(x) 
         return x

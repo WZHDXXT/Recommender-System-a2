@@ -4,12 +4,13 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert4rec_dataset, K):
+    # evaluation for validation
     model.eval()
     NDCG = 0.0
     RECALL = 0.0
 
     num_item_sample = 100
-    users = [user for user in range(make_sequence_dataset.num_user)] 
+    users = list(user_train.keys())
 
     for user in users:
         ndcg_u = 0.0
@@ -18,6 +19,7 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
 
         seq_prefix = user_train[user]
         for target_item in user_valid[user]:
+            # constraint the length
             seq_input = (seq_prefix + [make_sequence_dataset.num_item + 1])[-max_len:]
             padding_len = max_len - len(seq_input)
             seq_input = [0] * padding_len + seq_input
@@ -33,6 +35,7 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
                 ndcg_u += 1 / np.log2(rank + 2)
                 recall_u += 1
 
+            # append to previous sequence
             seq_prefix.append(target_item)
             count += 1
 
@@ -44,6 +47,7 @@ def evaluate(model, user_train, user_valid, max_len, make_sequence_dataset, bert
 
 
 def full_ranking_evaluate_with_validation(model, user_train, user_valid, user_test, max_len, vocab_size, device, K=10):
+    # evaluating on test set with full ranking
     model.eval()
     recall_sum, ndcg_sum, user_count = 0.0, 0.0, 0
 
@@ -54,13 +58,14 @@ def full_ranking_evaluate_with_validation(model, user_train, user_valid, user_te
         seq = user_train[user] + user_valid[user]  # train + valid 
 
         for target_item in user_test[user]:
+            # constraint the length
             input_seq = (seq + [vocab_size - 1])[-max_len:]  
             input_seq = [0] * (max_len - len(input_seq)) + input_seq
 
             seq_tensor = torch.LongTensor([input_seq]).to(device)
 
             with torch.no_grad():
-                logits = model(seq_tensor)  # [1, seq_len, vocab_size]
+                logits = model(seq_tensor)
                 pred_scores = logits[0, -1] 
 
             topk = torch.topk(pred_scores, k=K).indices.cpu().tolist()
@@ -83,7 +88,7 @@ def evaluate_test(model, user_train, user_valid, user_test, max_len, make_sequen
     RECALL = 0.0
 
     num_item_sample = 100
-    users = [user for user in range(make_sequence_dataset.num_user)] 
+    users = list(user_train.keys())
 
     for user in users:
         ndcg_u = 0.0

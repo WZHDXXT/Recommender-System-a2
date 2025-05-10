@@ -17,6 +17,7 @@ num_item = dataset.num_item
 user_train, user_valid, user_test = dataset.get_train_valid_data()
 bert4rec_dataset = BERTRecDataSet(user_train, max_len, num_user, num_item, mask_prob)
 
+# traning data
 data_loader = DataLoader(
     bert4rec_dataset, 
     batch_size = 32, 
@@ -24,8 +25,6 @@ data_loader = DataLoader(
     pin_memory = True,
     num_workers = 0
 )
-
-
 
 # model = BERT(
 #     max_seq_length=20,
@@ -46,6 +45,7 @@ hidden_size = 512
 
 bert_dropout = 0.1
 
+# Bert4Rec model
 model = Bert4Rec(
     max_seq_length=max_seq_length,
     vocab_size=vocab_size,
@@ -67,7 +67,7 @@ def train(model, criterion, optimizer, data_loader):
 
     for seq, labels in data_loader:
         seq, labels = seq.to(device), labels.to(device)
-        logits = model(seq)  # [batch, seq_len, vocab_size]
+        logits = model(seq)
         logits = logits.view(-1, logits.size(-1))
         labels = labels.view(-1)
 
@@ -95,6 +95,8 @@ patience = 10
 # for i in range(len(user_valid)):
 #     print(user_valid[i])
 
+
+# start training
 for epoch in range(1, epoch_num+1):
     train_loss = train(
         model = model, 
@@ -105,6 +107,8 @@ for epoch in range(1, epoch_num+1):
 
     print(f'Epoch: {epoch:3d}| Train loss: {train_loss:.5f}')
 
+    
+    # evaluate
     ndcg, recall = evaluate(
         model = model, 
         user_train = user_train,
@@ -116,6 +120,8 @@ for epoch in range(1, epoch_num+1):
     )
     print(ndcg, recall)
     ndcg_list.append(ndcg)
+
+    # early stopping based on validation NDCG@10
     if ndcg > best_ndcg:
         counter = 0
         best_ndcg = ndcg

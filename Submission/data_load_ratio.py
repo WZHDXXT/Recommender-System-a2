@@ -2,7 +2,8 @@ import pandas as pd
 import os
 from collections import defaultdict
 import numpy as np
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 class MakeSequenceDataSet():
     # SequenceDataSet for MovieLens 1M
     def __init__(self, data_path):
@@ -13,6 +14,8 @@ class MakeSequenceDataSet():
             engine='python',
             names=['userId', 'movieId', 'rating', 'timestamp']
         )
+        # Treat ratings ≥ 4 as positive interactions.
+        self.df = self.df[self.df['rating'] >= 4] 
 
         self.item_encoder, self.item_decoder = self.generate_encoder_decoder(self.df['movieId'])
         self.user_encoder, self.user_decoder = self.generate_encoder_decoder(self.df['userId'])
@@ -20,8 +23,8 @@ class MakeSequenceDataSet():
 
         self.df['item_idx'] = self.df['movieId'].apply(lambda x: self.item_encoder[x] + 1)  # +1 for padding=0
         self.df['user_idx'] = self.df['userId'].apply(lambda x: self.user_encoder[x])
-
-        # Sort interactions by user and timestamp
+        
+        # chronologically ordered sequence
         self.df = self.df.sort_values(['user_idx', 'timestamp'])
         self.user_train, self.user_valid, self.user_test = self.generate_sequence_data()
 
@@ -48,9 +51,11 @@ class MakeSequenceDataSet():
         group_df = self.df.groupby('user_idx')
         for user, group in group_df:
             seq = group['item_idx'].tolist()
-            if len(seq) < 5:  # Ensure there's enough history
+            
+            # Filter out users with fewer than 5 interactions.
+            if len(seq) < 5:  
                 continue
-            # seq = seq[-20:]  # Limit sequence to the last 20 items
+            # seq = seq[-20:]
             np.random.shuffle(seq)
 
             # Split data into 70% for training, 15% for validation, 15% for testing
@@ -67,12 +72,54 @@ class MakeSequenceDataSet():
         return self.user_train, self.user_valid, self.user_test
     
 
-# def main():
-#     dataset = MakeSequenceDataSet(data_path='./')
-#     user_train, user_valid, user_test = dataset.get_train_valid_data()
-#     num_user = dataset.num_user
-#     num_item = dataset.num_item
-#     print("User 0 train sequence:", user_train[0])
-#     print("User 0 validation item:", user_valid[0])
-#     print("User 0 test item:", user_test[0])
+def main():
+    dataset = MakeSequenceDataSet(data_path='./')
+    user_train, user_valid, user_test = dataset.get_train_valid_data()
+    total_lengths = [len(user_train[u]) + len(user_valid[u]) + len(user_test[u]) for u in user_train]
+
+    # Print some stats
+    print(f"Average total sequence length: {sum(total_lengths) / len(total_lengths):.2f}")
+    print(f"Min total sequence length: {min(total_lengths)}")
+    print(f"Max total sequence length: {max(total_lengths)}")
+
+    # Plot the distribution
+    plt.figure(figsize=(8, 5))
+    sns.histplot(total_lengths, bins=30, kde=True, color='skyblue', edgecolor='black')
+    plt.xlabel('Total sequence length per user', fontsize=12, fontweight='bold')
+    plt.ylabel('Number of users', fontsize=12, fontweight='bold')
+    plt.title('Distribution of Total Sequence Lengths', fontsize=14, fontweight='bold')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.xticks(fontsize=12, fontweight='bold')
+    plt.yticks(fontsize=12, fontweight='bold')
+
+    # Save the figure
+    plt.savefig('train_interaction_distribution.png', bbox_inches='tight', dpi=300)
+
+    plt.show()
+    total_lengths = [len(user_train[u]) + len(user_valid[u]) + len(user_test[u]) for u in user_train]
+
+    # Print some stats
+    print(f"Average total sequence length: {sum(total_lengths) / len(total_lengths):.2f}")
+    print(f"Min total sequence length: {min(total_lengths)}")
+    print(f"Max total sequence length: {max(total_lengths)}")
+
+    # Filter only users with <= 50 interactions
+    filtered_total_lengths = [l for l in total_lengths if l <= 40]
+
+    print(f"Number of users with <=50 total sequence length: {len(filtered_total_lengths)}")
+
+    # Plot the distribution
+    plt.figure(figsize=(8, 5))
+    sns.histplot(filtered_total_lengths, bins=50, kde=True, color='skyblue', edgecolor='black')
+    plt.xlabel('Total sequence length per user', fontsize=12, fontweight='bold')
+    plt.ylabel('Number of users', fontsize=12, fontweight='bold')
+    plt.title('Distribution of Total Sequence Lengths (≤50)', fontsize=14, fontweight='bold')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.xticks(fontsize=12, fontweight='bold')
+    plt.yticks(fontsize=12, fontweight='bold')
+
+    # Save the figure
+    plt.savefig('train_interaction_distribution_below_50.png', bbox_inches='tight', dpi=300)
+
+    plt.show()
 # main()
