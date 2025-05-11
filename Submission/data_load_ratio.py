@@ -2,8 +2,7 @@ import pandas as pd
 import os
 from collections import defaultdict
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 class MakeSequenceDataSet():
     # SequenceDataSet for MovieLens 1M
     def __init__(self, data_path):
@@ -56,7 +55,7 @@ class MakeSequenceDataSet():
             if len(seq) < 5:  
                 continue
             # seq = seq[-20:]
-            np.random.shuffle(seq)
+            # np.random.shuffle(seq)
 
             # Split data into 70% for training, 15% for validation, 15% for testing
             train_size = int(len(seq) * 0.7)
@@ -72,54 +71,52 @@ class MakeSequenceDataSet():
         return self.user_train, self.user_valid, self.user_test
     
 
-def main():
-    dataset = MakeSequenceDataSet(data_path='./')
-    user_train, user_valid, user_test = dataset.get_train_valid_data()
-    total_lengths = [len(user_train[u]) + len(user_valid[u]) + len(user_test[u]) for u in user_train]
+# def main():
+#     dataset = MakeSequenceDataSet(data_path='./')
+#     user_train, user_valid, user_test = dataset.get_train_valid_data()
+#     total_lengths = [len(user_train[u]) + len(user_valid[u]) + len(user_test[u]) for u in user_train]
 
-    # Print some stats
-    print(f"Average total sequence length: {sum(total_lengths) / len(total_lengths):.2f}")
-    print(f"Min total sequence length: {min(total_lengths)}")
-    print(f"Max total sequence length: {max(total_lengths)}")
+#     # Print some stats
+#     print(f"Average total sequence length: {sum(total_lengths) / len(total_lengths):.2f}")
+#     print(f"Min total sequence length: {min(total_lengths)}")
+#     print(f"Max total sequence length: {max(total_lengths)}")
 
-    # Plot the distribution
-    plt.figure(figsize=(8, 5))
-    sns.histplot(total_lengths, bins=30, kde=True, color='skyblue', edgecolor='black')
-    plt.xlabel('Total sequence length per user', fontsize=12, fontweight='bold')
-    plt.ylabel('Number of users', fontsize=12, fontweight='bold')
-    plt.title('Distribution of Total Sequence Lengths', fontsize=14, fontweight='bold')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.xticks(fontsize=12, fontweight='bold')
-    plt.yticks(fontsize=12, fontweight='bold')
+#     # Plot the distribution
+#     plt.figure(figsize=(8, 5))
+#     sns.histplot(total_lengths, bins=30, kde=True, color='skyblue', edgecolor='black')
+#     plt.xlabel('Total sequence length per user', fontsize=12, fontweight='bold')
+#     plt.ylabel('Number of users', fontsize=12, fontweight='bold')
+#     plt.title('Distribution of Total Sequence Lengths', fontsize=14, fontweight='bold')
+#     plt.grid(axis='y', linestyle='--', alpha=0.7)
+#     plt.xticks(fontsize=12, fontweight='bold')
+#     plt.yticks(fontsize=12, fontweight='bold')
 
-    # Save the figure
-    plt.savefig('train_interaction_distribution.png', bbox_inches='tight', dpi=300)
+#     # Save the figure
+#     plt.savefig('train_interaction_distribution.png', bbox_inches='tight', dpi=300)
 
-    plt.show()
-    total_lengths = [len(user_train[u]) + len(user_valid[u]) + len(user_test[u]) for u in user_train]
+#     plt.show()
+#     total_lengths = [len(user_train[u]) + len(user_valid[u]) + len(user_test[u]) for u in user_train]
 
-    # Print some stats
-    print(f"Average total sequence length: {sum(total_lengths) / len(total_lengths):.2f}")
-    print(f"Min total sequence length: {min(total_lengths)}")
-    print(f"Max total sequence length: {max(total_lengths)}")
+#     # Print some stats
+#     print(f"Average total sequence length: {sum(total_lengths) / len(total_lengths):.2f}")
+#     print(f"Min total sequence length: {min(total_lengths)}")
+#     print(f"Max total sequence length: {max(total_lengths)}")
 
-    # Filter only users with <= 50 interactions
-    filtered_total_lengths = [l for l in total_lengths if l <= 40]
+#     # Filter only users with <= 50 interactions
+#     filtered_total_lengths = [l for l in total_lengths if l <= 40]
 
-    print(f"Number of users with <=50 total sequence length: {len(filtered_total_lengths)}")
+#     print(f"Number of users with <=50 total sequence length: {len(filtered_total_lengths)}")
 
-    # Plot the distribution
-    plt.figure(figsize=(8, 5))
-    sns.histplot(filtered_total_lengths, bins=50, kde=True, color='skyblue', edgecolor='black')
-    plt.xlabel('Total sequence length per user', fontsize=12, fontweight='bold')
-    plt.ylabel('Number of users', fontsize=12, fontweight='bold')
-    plt.title('Distribution of Total Sequence Lengths (≤50)', fontsize=14, fontweight='bold')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.xticks(fontsize=12, fontweight='bold')
-    plt.yticks(fontsize=12, fontweight='bold')
 
-    # Save the figure
-    plt.savefig('train_interaction_distribution_below_50.png', bbox_inches='tight', dpi=300)
+#     cutoff = 30
+#     count_shorter = sum(1 for u in user_train if len(user_train[u]) < cutoff)
+#     count_cutoff = sum(1 for u in user_train if len(user_train[u]) >= cutoff)
+#     print(f'Users with < {cutoff} interactions (unchanged): {count_shorter}')
+#     print(f'Users with >= {cutoff} interactions (truncated to {cutoff}): {count_cutoff}')
 
-    plt.show()
+
+#     truncated_lengths = [len(user_train[u]) for u in user_train if len(user_train[u]) >= cutoff]
+#     print(f"Avg original length of truncated users: {np.mean(truncated_lengths):.2f}")
+#     print(f"Max truncated user length: {np.max(truncated_lengths)}")
+#     print(f"Min truncated user length: {np.min(truncated_lengths)}")
 # main()
